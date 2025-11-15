@@ -83,7 +83,7 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 security-scan:
-  stage: test
+  stage: scan
   image: docker:24.0.5
   services:
     - name: docker:24.0.5-dind

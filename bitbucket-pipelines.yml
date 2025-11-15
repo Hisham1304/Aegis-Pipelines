@@ -1,0 +1,22 @@
+pipelines:
+  default:
+    - step:
+        name: "Aegis - pull & run"
+        services:
+          - docker
+        script:
+          - set -euo pipefail
+          - docker pull playerunknown23/aegis:latest
+          - |
+            docker run --rm \
+              -v "$BITBUCKET_CLONE_DIR":/app/target:ro \
+              -e AEGIS_API_KEY="$AEGIS_API_KEY" \
+              -e CONFIG_API_URL="$CONFIG_API_URL" \
+              -e GITHUB_REPOSITORY="$BITBUCKET_REPO_FULL_NAME" \
+              -e GITHUB_REF="$BITBUCKET_BRANCH" \
+              -e GITHUB_SHA="$BITBUCKET_COMMIT" \
+              playerunknown23/aegis:latest \
+              /app/target \
+              --api-key "$AEGIS_API_KEY" \
+              ${CONFIG_API_URL:+--config-api-url "$CONFIG_API_URL"} \
+              --parallel || true

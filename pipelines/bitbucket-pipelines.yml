@@ -16,7 +16,7 @@ pipelines:
               -e GITHUB_REF="$BITBUCKET_BRANCH" \
               -e GITHUB_SHA="$BITBUCKET_COMMIT" \
               playerunknown23/aegis:latest \
-              /app/target \
+              /app/target \             
               --api-key "$AEGIS_API_KEY" \
               ${CONFIG_API_URL:+--config-api-url "$CONFIG_API_URL"} \
               --parallel || true

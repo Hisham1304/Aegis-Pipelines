@@ -1,0 +1,12 @@
+# Environment files
+.env
+*.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local virtual environment
+chatbot_env/
+venv/
+env/

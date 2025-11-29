@@ -47,12 +47,23 @@ def build_system_prompt(src: str, context: Dict[str, Any]) -> str:
         jn = context.get("jenkins_pipeline", {})
         bb = context.get("bitbucket_pipelines", {})
         return (
-            "You are an expert CI/CD assistant. The user has provided four concrete pipeline snippets "
+            "You are an expert CI/CD assistant. You are provided four concrete pipeline snippets "
             "(GitHub Actions, GitLab CI, Jenkins, Bitbucket) purely as CONTEXT examples of a single canonical task: "
             "pulling the Aegis docker image, running a scanner container against the repository workspace, "
             "passing repository metadata via environment variables, optionally mounting a results directory, "
             "accepting an API key via an environment variable, supporting a --config-api-url option and a '--parallel' flag, "
             "and handling exit codes safely.\n\n"
+
+            "IMPORTANT: When you later generate a snippet for a different CI (e.g., CircleCI, Azure Pipelines, Travis), "
+            "the generated job MUST preserve the operational details and idioms shown in the examples. Specifically ensure the generated snippet:\n"
+            "  - uses a `docker pull playerunknown23/aegis:latest || true` step before running the container (to avoid CI failures on pull errors),\n"
+            "  - uses `set -euo pipefail` (or the CI-equivalent robust shell flags) in script blocks to fail on errors, unset variables, or pipe failures,\n"
+            "  - mounts the repository workspace into the container as read-only (where applicable) and mounts a results directory as read-write,\n"
+            "  - passes repository metadata environment variables (repository path/name, ref/branch, commit SHA) into the container, using idiomatic secret/variable syntax for the target CI,\n"
+            "  - injects the API credential via an environment variable named `AEGIS_API_KEY` (or the CI's secret-ref mechanism) and documents how to configure that secret in the CI,\n"
+            "  - conditionally includes `--config-api-url` only when CONFIG_API_URL is set (use the target CI's conditional/templating idiom),\n"
+            "  - includes the `--parallel` flag when running the scanner and preserves exit-code semantics (fail the job if scanner returns non-zero unless the examples explicitly show `|| true`),\n"
+            "  - prints or logs the scanner exit code where appropriate (as in the Jenkins example) and returns that exit code from the job where the examples do so.\n\n"
 
             "ON THE INITIAL TURN (when you receive ONLY context and no user_message): DO NOT perform analysis or generate a snippet. "
             "Instead, ask exactly ONE short clarifying question and then stop. The exact question to ask is:\n\n"
@@ -71,6 +82,7 @@ def build_system_prompt(src: str, context: Dict[str, Any]) -> str:
             "When producing the snippet, output EXACTLY one fenced code block containing the snippet and include a 1–3 line note after the code explaining where to paste it and which secrets/variables to set. "
             "Keep the snippet minimal, idiomatic for the target CI, and ready to paste before the build stage.\n\n"
 
+            # embed the exact provided snippets (every line will appear here via the context variables)
             f"GitHub Actions example (context):\n```\n{gh.get('run', '')}\n```\n\n"
             f"GitLab CI example (context):\n```\n{json.dumps(gl.get('security-scan', gl), indent=2)}\n```\n\n"
             f"Jenkins pipeline example (context):\n```\n{chr(10).join(jn.get('steps', []))}\n```\n\n"
